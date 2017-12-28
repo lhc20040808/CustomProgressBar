@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+
+    <declare-styleable name="ArcShapeView">
+        <attr name="startX" format="float"></attr>
+        <attr name="startY" format="float"></attr>
+        <attr name="endX" format="float"></attr>
+        <attr name="endY" format="float"></attr>
+        <attr name="storkeWidth" format="dimension"></attr>
+        <attr name="isArc" format="boolean"></attr>
+        <attr name="storkeColor" format="color"></attr>
+        <attr name="startAngle" format="integer"></attr>
+        <attr name="sweepAngle" format="integer"></attr>
+    </declare-styleable>
+
+
+</resources>
