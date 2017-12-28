@@ -19,8 +19,8 @@ import android.graphics.Shader;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
+import android.view.View;
 import android.view.animation.DecelerateInterpolator;
-import android.widget.ProgressBar;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +30,7 @@ import java.util.List;
  * 时间：2017/12/27.
  */
 
-public class CircleProgressView extends ProgressBar {
+public class CircleProgressView extends View {
     /**
      * 进度条宽度
      */
