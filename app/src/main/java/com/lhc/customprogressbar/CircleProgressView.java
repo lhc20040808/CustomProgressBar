@@ -17,6 +17,7 @@ import android.graphics.RectF;
 import android.graphics.Region;
 import android.graphics.Shader;
 import android.support.annotation.Nullable;
+import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -34,15 +35,15 @@ public class CircleProgressView extends View {
     /**
      * 进度条宽度
      */
-    private final int progressWidth = 40;
+    private int progressWidth;
     /**
      * 节点线条宽度
      */
-    private final int nodeLineWidth = 5;
+    private int nodeLineWidth;
     /**
      * 节点圆形半径
      */
-    private final int nodeCircleRadius = 8;
+    private int nodeCircleRadius;
     /**
      * 起始角度
      */
@@ -58,12 +59,14 @@ public class CircleProgressView extends View {
     /**
      * 文字大小
      */
-    private int nodeTxtSize = 45;
+    private int nodeTxtSize;
     /**
      * 当前选中的节点
      */
     private int curNodeId;
-
+    /**
+     * 线性渐变
+     */
     private LinearGradient linearGradient;
     private List<Node> nodeList = new ArrayList<>();
     private RectF rectFOut;
@@ -106,12 +109,13 @@ public class CircleProgressView extends View {
     /**
      * 标签字体大小
      */
-    private float labelTxtSize = 60;
+    private float labelTxtSize;
     /**
      * 当前选择项信息字体大小
      */
-    private float idTxtSize = 140;
+    private float idTxtSize;
     private OnProgressChangeListener listener;
+    private int riskTextColor;
 
     public CircleProgressView(Context context) {
         this(context, null);
@@ -124,6 +128,18 @@ public class CircleProgressView extends View {
     public CircleProgressView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
+        initProperty(context);
+    }
+
+    private void initProperty(Context context) {
+        nodeLineWidth = (int) ScreenUtil.dip2px(context, 1);
+        progressWidth = (int) ScreenUtil.dip2px(context, 10);
+        nodeCircleRadius = (int) ScreenUtil.dip2px(context, 2);
+        nodeTxtSize = ScreenUtil.sp2px(context, 11);
+        labelTxtSize = ScreenUtil.sp2px(context, 16);
+        idTxtSize = ScreenUtil.sp2px(context, 28);
+        nodeTextColor = ContextCompat.getColor(context, R.color.textblack);
+        riskTextColor = ContextCompat.getColor(context, R.color.textgray);
     }
 
     private void init() {
@@ -150,10 +166,8 @@ public class CircleProgressView extends View {
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
 
-
-        float width = w * 2 / 3;
-        float height = w * 2 / 3;
-
+        float width = w * 3 / 5;
+        float height = w * 3 / 5;
 
         rectFOut.left = w / 2 - width / 2;
         rectFOut.right = w / 2 + width / 2;
@@ -180,17 +194,19 @@ public class CircleProgressView extends View {
         linearGradient = new LinearGradient(rectFOut.left, rectFOut.top, rectFOut.right, rectFOut.bottom, colors, null, Shader.TileMode.CLAMP);
     }
 
-
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 isInTouch = touchRegion.contains((int) event.getX(), (int) event.getY());
+                getParent().requestDisallowInterceptTouchEvent(isInTouch);
                 break;
             case MotionEvent.ACTION_MOVE:
                 if (isInTouch) {
                     touchProgress = getTouchAngleToProgress((int) event.getX(), (int) event.getY());
                 }
+                invalidate();
                 break;
             case MotionEvent.ACTION_CANCEL:
             case MotionEvent.ACTION_UP:
@@ -198,9 +214,10 @@ public class CircleProgressView extends View {
                     refreshCurId();
                     resetAnim();
                 }
+                invalidate();
                 break;
         }
-        invalidate();
+
         return true;
     }
 
@@ -242,20 +259,25 @@ public class CircleProgressView extends View {
     }
 
     private void refreshCurId() {
-        int i = 1;
-        for (; i < nodeList.size(); i++) {
-            Node node = nodeList.get(i);
-            if (node.getProgress() > touchProgress) {
-                Node pre = nodeList.get(i - 1);
 
-                if (pre == null) {
-                    curNodeId = i;
-                } else {
-                    float center = (pre.getProgress() + node.getProgress()) / 2;
-                    curNodeId = center >= touchProgress ? i - 1 : i;
+        if (touchProgress >= 1) {
+            curNodeId = nodeList.size() - 1;
+        } else {
+            int i = 1;
+            for (; i < nodeList.size(); i++) {
+                Node node = nodeList.get(i);
+                if (node.getProgress() > touchProgress) {
+                    Node pre = nodeList.get(i - 1);
+
+                    if (pre == null) {
+                        curNodeId = i;
+                    } else {
+                        float center = (pre.getProgress() + node.getProgress()) / 2;
+                        curNodeId = center >= touchProgress ? i - 1 : i;
+                    }
+
+                    break;
                 }
-
-                break;
             }
         }
 
@@ -280,15 +302,17 @@ public class CircleProgressView extends View {
         float txtX = centerX;
         float txtY = centerY - (fontMetrics.bottom - fontMetrics.top) / 2;
         paint.setColor(nodeColor);
+        paint.setStyle(Paint.Style.FILL);
         paint.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText(curNodeId + "级", txtX, txtY, paint);
+        canvas.drawText((curNodeId + 1) + "级", txtX, txtY, paint);
     }
 
     private void drawLabel(Canvas canvas) {
         paint.setTextSize(labelTxtSize);
         Paint.FontMetrics fontMetrics = paint.getFontMetrics();
-        paint.setColor(nodeTextColor);//设置文字颜色
+        paint.setColor(riskTextColor);//设置文字颜色
         paint.setTextAlign(Paint.Align.CENTER);
+        paint.setStyle(Paint.Style.FILL);
         float txtX = centerX;
         float txtY = centerY + (fontMetrics.bottom - fontMetrics.top) / 2;
         canvas.drawText(progressLabel, txtX, txtY, paint);
@@ -396,6 +420,10 @@ public class CircleProgressView extends View {
         paint.setColor(nodeColor);
         paint.setStrokeWidth(5);
         canvas.drawPath(progressInPath, paint);
+    }
+
+    public void setCurNodeId(int curNodeId) {
+        this.curNodeId = curNodeId;
     }
 
     public void addNodes(List<Node> list) {
